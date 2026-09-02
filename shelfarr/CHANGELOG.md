@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.08.31.1_6
+
+- **TEMPORARY DIAGNOSTIC — will be reverted.** Adds a boot-time check that reads the raw `audiobookshelf_url` setting directly via `bin/rails runner`, logs it, and corrects it if it doesn't match the expected value. This is instance-specific troubleshooting scaffolding for a live investigation into why the setting appears to revert to a different port than what's saved in the UI, and is not meant to ship long-term. No-ops cleanly on any instance without existing secret/encryption key files (fresh installs, CI).
+
 ## 2026.08.31.1_5
 
 - **Fixed: "Audiobook path not writable; Ebook path not writable"** in Shelfarr's own System Health check. `run.sh` created the mapped output directories as root but never chowned them to PUID:PGID, unlike upstream's own `/rails/storage` handling — confirmed live (`root:root`, mode `755`). Now applies the same `chown_on_start` policy (auto/always/never) to `audiobooks_path`, `ebooks_path`, and `downloads_path` that already covered storage. CI smoke test now checks all three are writable as uid 1000 (default PUID), so this can't silently regress again.
