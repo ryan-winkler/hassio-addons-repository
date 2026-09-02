@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.08.31.1_7
+
+- **TEMPORARY DIAGNOSTIC (extends 1_6) — will be reverted.** The URL is confirmed correct now, but syncing still produces zero new items with zero errors. Extends the boot-time diagnostic to print the configured scan-library-id settings, every library Audiobookshelf reports (id/name/media_type/`audiobook_library?`), and the actual result (or exception) of running a real sync — to see directly why zero libraries are being picked up instead of continuing to guess.
+
 ## 2026.08.31.1_6
 
 - **TEMPORARY DIAGNOSTIC — will be reverted.** Adds a boot-time check that reads the raw `audiobookshelf_url` setting directly via `bin/rails runner`, logs it, and corrects it if it doesn't match the expected value. This is instance-specific troubleshooting scaffolding for a live investigation into why the setting appears to revert to a different port than what's saved in the UI, and is not meant to ship long-term. No-ops cleanly on any instance without existing secret/encryption key files (fresh installs, CI).
