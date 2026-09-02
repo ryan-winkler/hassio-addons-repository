@@ -174,6 +174,15 @@ jobs:
           docker exec shelfarr-smoke readlink -f /ebooks
           docker exec shelfarr-smoke readlink -f /downloads
 
+          echo "--- output path writability check (as uid 1000, matching default PUID) ---"
+          for p in /audiobooks /ebooks /downloads; do
+            if ! docker exec --user 1000 shelfarr-smoke test -w "$p"; then
+              echo "::error::$p is not writable by uid 1000 (default PUID) -- Shelfarr's own health check would report this path as down"
+              docker rm -f shelfarr-smoke
+              exit 1
+            fi
+          done
+
           docker rm -f shelfarr-smoke
 
       - name: Update cache

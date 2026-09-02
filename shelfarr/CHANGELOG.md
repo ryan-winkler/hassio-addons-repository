@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.08.31.1_5
+
+- **Fixed: "Audiobook path not writable; Ebook path not writable"** in Shelfarr's own System Health check. `run.sh` created the mapped output directories as root but never chowned them to PUID:PGID, unlike upstream's own `/rails/storage` handling — confirmed live (`root:root`, mode `755`). Now applies the same `chown_on_start` policy (auto/always/never) to `audiobooks_path`, `ebooks_path`, and `downloads_path` that already covered storage. CI smoke test now checks all three are writable as uid 1000 (default PUID), so this can't silently regress again.
+
 ## 2026.08.31.1_4
 
 - **Fixed: add-on wouldn't start** ("Invalid configuration — expected int"). `rails_max_threads: ""` as the options default was invalid against its `int?` schema type (empty string isn't a valid int, unlike the `str?` fields). Removed the default entirely — the option is still available, just not pre-populated, matching every other optional non-string field's convention.
