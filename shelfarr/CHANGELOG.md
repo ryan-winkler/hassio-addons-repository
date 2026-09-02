@@ -3,6 +3,7 @@
 ## 2026.08.31.1_1
 
 - Surfaced the remaining documented Shelfarr environment variables as options: `rails_relative_url_root` (sub-path reverse proxy support), `allow_nonatomic_nfs_directory_publication`, and `tz`.
+- Added Ingress + sidebar panel entry (convenience access only, no SSO — config-only change, no image rebuild). See README's "Ingress (sidebar access)" section for the known dynamic-path caveat.
 
 ## 2026.08.31.1
 

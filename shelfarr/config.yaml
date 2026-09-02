@@ -12,6 +12,11 @@ ports:
 ports_description:
   80/tcp: "Shelfarr Web UI"
 webui: "http://[HOST]:[PORT:80]"
+ingress: true
+ingress_port: 80
+ingress_entry: "/"
+panel_icon: mdi:bookshelf
+panel_title: Shelfarr
 map:
   - media:rw
   - share:rw
