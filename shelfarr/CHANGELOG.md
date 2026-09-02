@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026.08.31.1_3
+
+- **Fixed a production crash**, found via live testing on a real HA instance: the default `rails_max_threads: 3` forced BOTH the Puma thread pool and the SQLite connection pool down to 3 (they share one env var), but Solid Queue — which always runs embedded in Puma here (`SOLID_QUEUE_IN_PUMA=1`) — needs a pool of at least 5. The pool doesn't exhaust at boot; ours ran for ~32 minutes before Solid Queue killed Puma, leaving Thruster (the add-on's own internal proxy) 502ing every request until manually restarted — and the CI smoke test's ~15s boot check never runs long enough to catch this class of bug.
+- `rails_max_threads` is now blank/optional by default, restoring upstream's own mismatched-but-working fallback (Puma defaults to 3 threads via `config/puma.rb`, the DB pool independently defaults to 5 via `config/database.yml`). If you do set it, the add-on now refuses to start below 5 with a clear error instead of silently crashing later.
+
 ## 2026.08.31.1_2
 
 - Added a CI smoke test (PR check): builds the image, boots it with a stub `/data/options.json`, and confirms `/up` returns 200 and the storage/library symlinks resolve correctly before any change can merge. This caught a real bug (see below) that the earlier build-only CI missed.

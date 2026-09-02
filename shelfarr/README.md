@@ -67,7 +67,7 @@ mkdir -p /share/shelfarr/downloads /media/shelfarr/audiobooks /media/shelfarr/eb
 | `downloads_path` | `/share/shelfarr/downloads` | Folder Shelfarr watches for completed downloads to post-process. |
 | `rails_master_key` | *(blank)* | Leave blank to auto-generate and persist a secret key. |
 | `rails_relative_url_root` | *(blank)* | Set only when reverse-proxying at a sub-path, e.g. `/shelfarr`, so generated links/assets resolve correctly. Leave blank for direct access or a dedicated subdomain (e.g. `shelfarr.example.com`, `shelfarr.internal`). |
-| `rails_max_threads` | `3` | Puma thread count and SQLite connection pool size. |
+| `rails_max_threads` | *(blank)* | Puma thread count and SQLite connection pool size. **Must be >= 5 if set** — Solid Queue runs embedded in Puma and needs at least 5 DB connections; a lower pool exhausts under load and crashes the app (not at boot — ours took ~32 minutes). Leave blank for the safe default (Puma=3 threads, DB pool=5, upstream's own mismatched-by-design fallback). |
 | `job_concurrency` | `1` | Solid Queue background worker processes (downloads, imports, scans). |
 | `auth_disabled` | `false` | Skip password login (username-only). Only enable on trusted networks. |
 | `trust_nfs_uid_squash` | `false` | Enable if your library paths are on an NFS mount that squashes UIDs. |

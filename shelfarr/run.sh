@@ -43,7 +43,7 @@ PGID="$(read_opt pgid)"; PGID="${PGID:-1000}"
 CHOWN_ON_START="$(read_opt chown_on_start)"; CHOWN_ON_START="${CHOWN_ON_START:-auto}"
 RAILS_MASTER_KEY_OPT="$(read_opt rails_master_key)"
 RAILS_RELATIVE_URL_ROOT_OPT="$(read_opt rails_relative_url_root)"
-RAILS_MAX_THREADS="$(read_opt rails_max_threads)"; RAILS_MAX_THREADS="${RAILS_MAX_THREADS:-3}"
+RAILS_MAX_THREADS_OPT="$(read_opt rails_max_threads)"
 JOB_CONCURRENCY="$(read_opt job_concurrency)"; JOB_CONCURRENCY="${JOB_CONCURRENCY:-1}"
 AUTH_DISABLED="$(read_opt auth_disabled)"; AUTH_DISABLED="${AUTH_DISABLED:-false}"
 TRUST_NFS_UID_SQUASH_OPT="$(read_opt trust_nfs_uid_squash)"; TRUST_NFS_UID_SQUASH_OPT="${TRUST_NFS_UID_SQUASH_OPT:-false}"
@@ -84,11 +84,27 @@ fi
 
 export PUID PGID CHOWN_ON_START
 export SOLID_QUEUE_IN_PUMA=1
-export RAILS_MAX_THREADS
 export JOB_CONCURRENCY
 export DISABLE_AUTH="$AUTH_DISABLED"
 export TRUST_NFS_UID_SQUASH="$TRUST_NFS_UID_SQUASH_OPT"
 export SHELFARR_SETTING_ALLOW_NONATOMIC_NFS_DIRECTORY_PUBLICATION="$ALLOW_NONATOMIC_NFS_OPT"
+
+# RAILS_MAX_THREADS sizes BOTH the Puma thread pool (config/puma.rb) and the
+# database connection pool (config/database.yml), but Solid Queue's own
+# supervisor -- always running embedded in Puma here via SOLID_QUEUE_IN_PUMA
+# -- needs a pool of at least 5 regardless of that setting. Below 5, the
+# pool silently exhausts under load (not at boot -- ours ran ~32 minutes
+# before Solid Queue killed Puma) and every request 502s from Thruster
+# until the add-on is restarted. Leaving this unset lets Puma default to 3
+# threads (config/puma.rb) while the DB pool independently defaults to 5
+# (config/database.yml) -- that mismatch-by-design is what upstream ships
+# and relies on, so only export it when the user opts into a higher value.
+if [[ -n "$RAILS_MAX_THREADS_OPT" ]]; then
+    [[ "$RAILS_MAX_THREADS_OPT" =~ ^[0-9]+$ && "$RAILS_MAX_THREADS_OPT" -ge 5 ]] \
+        || die "rails_max_threads must be >= 5 (Solid Queue needs that many DB connections when embedded in Puma) or left blank for the safe default"
+    export RAILS_MAX_THREADS="$RAILS_MAX_THREADS_OPT"
+fi
+
 if [[ -n "$RAILS_MASTER_KEY_OPT" ]]; then
     export RAILS_MASTER_KEY="$RAILS_MASTER_KEY_OPT"
 fi
@@ -104,7 +120,7 @@ log "  puid:pgid=${PUID}:${PGID} chown_on_start=${CHOWN_ON_START}"
 log "  audiobooks_path=${AUDIOBOOKS_PATH}"
 log "  ebooks_path=${EBOOKS_PATH}"
 log "  downloads_path=${DOWNLOADS_PATH}"
-log "  rails_max_threads=${RAILS_MAX_THREADS} job_concurrency=${JOB_CONCURRENCY}"
+log "  rails_max_threads=${RAILS_MAX_THREADS_OPT:-<default: puma=3, db pool=5>} job_concurrency=${JOB_CONCURRENCY}"
 log "  rails_relative_url_root=${RAILS_RELATIVE_URL_ROOT_OPT:-<none>}"
 log "  auth_disabled=${AUTH_DISABLED} trust_nfs_uid_squash=${TRUST_NFS_UID_SQUASH_OPT} allow_nonatomic_nfs_directory_publication=${ALLOW_NONATOMIC_NFS_OPT}"
 log "  tz=${TZ_OPT:-<container default>}"

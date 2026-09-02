@@ -25,7 +25,7 @@ configuration:
     description: Set only when reverse-proxying Shelfarr at a sub-path (e.g. "/shelfarr"), so generated links and assets resolve correctly. Leave blank for direct access or a dedicated subdomain (e.g. shelfarr.example.com).
   rails_max_threads:
     name: Max threads
-    description: Puma thread count per process and the SQLite connection pool size (RAILS_MAX_THREADS).
+    description: Puma thread count and the SQLite connection pool size (RAILS_MAX_THREADS). Leave blank for the safe default. If set, must be >= 5 — Solid Queue (running embedded in Puma) needs at least that many DB connections and will crash the app after a period of runtime if the pool is smaller.
   job_concurrency:
     name: Job concurrency
     description: Number of Solid Queue background worker processes (downloads, imports, scans).
