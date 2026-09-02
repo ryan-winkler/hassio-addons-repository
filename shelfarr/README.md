@@ -13,6 +13,8 @@ Documentation: [github.com/Pedro-Revez-Silva/shelfarr](https://github.com/Pedro-
 - No external database required (SQLite + Solid Queue, single container).
 - Supports `amd64` and `aarch64`.
 - Includes a baseline AppArmor profile.
+- Watchdog checks `/up` and auto-restarts the add-on if it stops responding.
+- Backups stop the container first (`backup: cold`) so the SQLite databases are never snapshotted mid-write.
 
 ## Ingress (sidebar access)
 
