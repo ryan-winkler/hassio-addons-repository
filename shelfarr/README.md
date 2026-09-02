@@ -13,12 +13,12 @@ Documentation: [github.com/Pedro-Revez-Silva/shelfarr](https://github.com/Pedro-
 - No external database required (SQLite + Solid Queue, single container).
 - Supports `amd64` and `aarch64`.
 - Includes a baseline AppArmor profile.
-- Watchdog checks `/up` and auto-restarts the add-on if it stops responding.
+- A Docker healthcheck (`/up`) marks the add-on unhealthy if it stops responding, visible in the add-on's status.
 - Backups stop the container first (`backup: cold`) so the SQLite databases are never snapshotted mid-write.
 
 ## Ingress (sidebar access)
 
-The add-on registers a HA sidebar panel via Ingress, so Shelfarr shows up alongside your other integrations without needing to remember a port. This is convenience only — **it does not add single sign-on**. Ingress requests are proxied through Supervisor at a path that isn't known until runtime, and Shelfarr's Rails app wasn't built to read that path dynamically per-request (it only supports a fixed `rails_relative_url_root` set at boot). In practice this usually still works because Ingress forwards normal root-relative paths straight through, but if you see missing CSS/JS or broken links inside the sidebar panel, that's why — use the direct link (`http://<HA_IP>:5056`, from **Open Web UI**) as the reliable fallback; it's unaffected by Ingress either way.
+The add-on registers a HA sidebar panel via Ingress, so Shelfarr shows up alongside your other integrations without needing to remember a port. This is convenience only — **it does not add single sign-on**. Ingress requests are proxied through Supervisor at a path that isn't known until runtime, and Shelfarr's Rails app wasn't built to read that path dynamically per-request (it only supports a fixed `rails_relative_url_root` set at boot). In practice this usually still works because Ingress forwards normal root-relative paths straight through, but if you see missing CSS/JS or broken links inside the sidebar panel, that's why — use the direct link `http://<HA_IP>:5056` as the reliable fallback; it's unaffected by Ingress either way.
 
 True HA-account SSO (validating logins against Supervisor's `/auth`, i.e. `auth_api`) is not implemented — it needs a source-level patch to Shelfarr's login flow, not just add-on config. See the add-on's PR/commit history for the tradeoff writeup if that's ever worth doing.
 

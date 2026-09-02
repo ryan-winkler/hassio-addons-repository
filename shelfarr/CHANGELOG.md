@@ -2,7 +2,9 @@
 
 ## 2026.08.31.1_2
 
-- Added a CI smoke test (PR check): builds the image, boots it with a stub `/data/options.json`, and confirms `/up` returns 200 and the storage/library symlinks resolve correctly before any change can merge.
+- Added a CI smoke test (PR check): builds the image, boots it with a stub `/data/options.json`, and confirms `/up` returns 200 and the storage/library symlinks resolve correctly before any change can merge. This caught a real bug (see below) that the earlier build-only CI missed.
+- **Fixed:** `run.sh`'s option reader returned the literal string `"null"` for any option key not present in `options.json` (jq's `-e`/`.[$k]` prints `null` before failing), which bash's `${VAR:-default}` doesn't treat as empty — so every option silently fell through to a broken value like `audiobooks_path=/rails/null` instead of its documented default. Now compares against `null` inside `jq` and returns a genuinely empty string.
+- Fixed addon-linter failures: removed `webui` (invalid once Ingress is enabled) and replaced the deprecated `watchdog` config field with a native Docker `HEALTHCHECK` against `/up`.
 - Documented reverse proxy / custom domain behavior, verified against Shelfarr's actual Rails config: no Host header blocking, no forced-HTTPS redirect loop, and that ActionCable (`/cable`) needs WebSocket forwarding for live page updates (degrades gracefully to manual-refresh if not forwarded).
 
 ## 2026.08.31.1_1
