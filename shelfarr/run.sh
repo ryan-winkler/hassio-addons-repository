@@ -38,10 +38,13 @@ PUID="$(read_opt puid)"; PUID="${PUID:-1000}"
 PGID="$(read_opt pgid)"; PGID="${PGID:-1000}"
 CHOWN_ON_START="$(read_opt chown_on_start)"; CHOWN_ON_START="${CHOWN_ON_START:-auto}"
 RAILS_MASTER_KEY_OPT="$(read_opt rails_master_key)"
+RAILS_RELATIVE_URL_ROOT_OPT="$(read_opt rails_relative_url_root)"
 RAILS_MAX_THREADS="$(read_opt rails_max_threads)"; RAILS_MAX_THREADS="${RAILS_MAX_THREADS:-3}"
 JOB_CONCURRENCY="$(read_opt job_concurrency)"; JOB_CONCURRENCY="${JOB_CONCURRENCY:-1}"
 AUTH_DISABLED="$(read_opt auth_disabled)"; AUTH_DISABLED="${AUTH_DISABLED:-false}"
 TRUST_NFS_UID_SQUASH_OPT="$(read_opt trust_nfs_uid_squash)"; TRUST_NFS_UID_SQUASH_OPT="${TRUST_NFS_UID_SQUASH_OPT:-false}"
+ALLOW_NONATOMIC_NFS_OPT="$(read_opt allow_nonatomic_nfs_directory_publication)"; ALLOW_NONATOMIC_NFS_OPT="${ALLOW_NONATOMIC_NFS_OPT:-false}"
+TZ_OPT="$(read_opt tz)"
 
 AUDIOBOOKS_PATH_RAW="$(read_opt audiobooks_path)"; AUDIOBOOKS_PATH_RAW="${AUDIOBOOKS_PATH_RAW:-$DEFAULT_AUDIOBOOKS_PATH}"
 EBOOKS_PATH_RAW="$(read_opt ebooks_path)"; EBOOKS_PATH_RAW="${EBOOKS_PATH_RAW:-$DEFAULT_EBOOKS_PATH}"
@@ -81,8 +84,15 @@ export RAILS_MAX_THREADS
 export JOB_CONCURRENCY
 export DISABLE_AUTH="$AUTH_DISABLED"
 export TRUST_NFS_UID_SQUASH="$TRUST_NFS_UID_SQUASH_OPT"
+export SHELFARR_SETTING_ALLOW_NONATOMIC_NFS_DIRECTORY_PUBLICATION="$ALLOW_NONATOMIC_NFS_OPT"
 if [[ -n "$RAILS_MASTER_KEY_OPT" && "$RAILS_MASTER_KEY_OPT" != "null" ]]; then
     export RAILS_MASTER_KEY="$RAILS_MASTER_KEY_OPT"
+fi
+if [[ -n "$RAILS_RELATIVE_URL_ROOT_OPT" && "$RAILS_RELATIVE_URL_ROOT_OPT" != "null" ]]; then
+    export RAILS_RELATIVE_URL_ROOT="$RAILS_RELATIVE_URL_ROOT_OPT"
+fi
+if [[ -n "$TZ_OPT" && "$TZ_OPT" != "null" ]]; then
+    export TZ="$TZ_OPT"
 fi
 
 log "Configuration summary:"
@@ -91,7 +101,9 @@ log "  audiobooks_path=${AUDIOBOOKS_PATH}"
 log "  ebooks_path=${EBOOKS_PATH}"
 log "  downloads_path=${DOWNLOADS_PATH}"
 log "  rails_max_threads=${RAILS_MAX_THREADS} job_concurrency=${JOB_CONCURRENCY}"
-log "  auth_disabled=${AUTH_DISABLED} trust_nfs_uid_squash=${TRUST_NFS_UID_SQUASH_OPT}"
+log "  rails_relative_url_root=${RAILS_RELATIVE_URL_ROOT_OPT:-<none>}"
+log "  auth_disabled=${AUTH_DISABLED} trust_nfs_uid_squash=${TRUST_NFS_UID_SQUASH_OPT} allow_nonatomic_nfs_directory_publication=${ALLOW_NONATOMIC_NFS_OPT}"
+log "  tz=${TZ_OPT:-<container default>}"
 
 cd /rails
 exec /rails/bin/docker-entrypoint ./bin/thrust ./bin/rails server

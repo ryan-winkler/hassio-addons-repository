@@ -20,6 +20,9 @@ configuration:
   rails_master_key:
     name: Rails master key
     description: Leave blank to auto-generate and persist a secret key in the add-on's own storage.
+  rails_relative_url_root:
+    name: Relative URL root
+    description: Set only when reverse-proxying Shelfarr at a sub-path (e.g. "/shelfarr"), so generated links and assets resolve correctly. Leave blank for direct access or a dedicated subdomain (e.g. shelfarr.example.com).
   rails_max_threads:
     name: Max threads
     description: Puma thread count per process and the SQLite connection pool size (RAILS_MAX_THREADS).
@@ -32,3 +35,9 @@ configuration:
   trust_nfs_uid_squash:
     name: Trust NFS UID squash
     description: Enable if audiobooks/ebooks/downloads paths are on an NFS mount that squashes UIDs, to avoid unnecessary ownership errors.
+  allow_nonatomic_nfs_directory_publication:
+    name: Allow non-atomic NFS directory publication
+    description: Allows directory imports when NFS rejects atomic no-replace renames. Enable only for a single-writer NFS export.
+  tz:
+    name: Time zone
+    description: IANA time zone used for displayed timestamps (e.g. America/New_York). Leave blank for the container default (UTC).

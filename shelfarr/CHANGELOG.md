@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.08.31.1_1
+
+- Surfaced the remaining documented Shelfarr environment variables as options: `rails_relative_url_root` (sub-path reverse proxy support), `allow_nonatomic_nfs_directory_publication`, and `tz`.
+
 ## 2026.08.31.1
 
 - First Home Assistant add-on packaging for Shelfarr.

@@ -49,10 +49,15 @@ mkdir -p /share/shelfarr/downloads /media/shelfarr/audiobooks /media/shelfarr/eb
 | `ebooks_path` | `/media/shelfarr/ebooks` | Where Shelfarr places completed ebooks. |
 | `downloads_path` | `/share/shelfarr/downloads` | Folder Shelfarr watches for completed downloads to post-process. |
 | `rails_master_key` | *(blank)* | Leave blank to auto-generate and persist a secret key. |
+| `rails_relative_url_root` | *(blank)* | Set only when reverse-proxying at a sub-path, e.g. `/shelfarr`, so generated links/assets resolve correctly. Leave blank for direct access or a dedicated subdomain (e.g. `shelfarr.example.com`, `shelfarr.internal`). |
 | `rails_max_threads` | `3` | Puma thread count and SQLite connection pool size. |
 | `job_concurrency` | `1` | Solid Queue background worker processes (downloads, imports, scans). |
 | `auth_disabled` | `false` | Skip password login (username-only). Only enable on trusted networks. |
 | `trust_nfs_uid_squash` | `false` | Enable if your library paths are on an NFS mount that squashes UIDs. |
+| `allow_nonatomic_nfs_directory_publication` | `false` | Allows directory imports when NFS rejects atomic no-replace renames. Single-writer NFS exports only. |
+| `tz` | *(blank)* | IANA time zone for displayed timestamps, e.g. `America/New_York`. Blank uses the container default (UTC). |
+
+The external port (`5056` by default) can be changed anytime from the add-on's **Configuration → Network** tab — no option or env var needed for that.
 
 ## Next steps in the Shelfarr UI
 
