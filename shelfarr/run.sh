@@ -175,6 +175,28 @@ if [[ -f /rails/storage/.secret_key_base && -f /rails/storage/.encryption_keys ]
       else
         puts "DIAG audiobookshelf_url already correct, no change made"
       end
+
+      puts "DIAG scan_ids audiobook=#{SettingsService.get(:audiobookshelf_audiobook_scan_library_ids).inspect}"
+      puts "DIAG scan_ids ebook=#{SettingsService.get(:audiobookshelf_ebook_scan_library_ids).inspect}"
+      puts "DIAG scan_ids comicbook=#{SettingsService.get(:audiobookshelf_comicbook_scan_library_ids).inspect}"
+
+      begin
+        libraries = LibraryPlatformClient.libraries
+        puts "DIAG discovered #{libraries.size} libraries:"
+        libraries.each do |lib|
+          puts "DIAG  id=#{lib.id.inspect} name=#{lib.name.inspect} media_type=#{lib.media_type.inspect} audiobook_library?=#{lib.audiobook_library?}"
+        end
+      rescue => e
+        puts "DIAG libraries call raised: #{e.class}: #{e.message}"
+      end
+
+      begin
+        result = AudiobookshelfLibrarySyncService.new.sync!
+        puts "DIAG sync! returned: #{result.inspect}"
+      rescue => e
+        puts "DIAG sync! raised: #{e.class}: #{e.message}"
+        puts "DIAG backtrace: #{e.backtrace&.first(5)&.join(\" | \")}"
+      end
     ' 2>&1)" || true
     while IFS= read -r line; do log "DIAG: $line"; done <<< "$DIAG_OUTPUT"
 fi
