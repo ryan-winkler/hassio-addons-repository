@@ -153,4 +153,30 @@ log "  auth_disabled=${AUTH_DISABLED} trust_nfs_uid_squash=${TRUST_NFS_UID_SQUAS
 log "  tz=${TZ_OPT:-<container default>}"
 
 cd /rails
+
+# TEMPORARY DIAGNOSTIC -- to be reverted once the audiobookshelf_url
+# mystery is resolved. Reads the actual stored setting via Rails itself
+# (bypassing the web form entirely) and corrects it if it doesn't match
+# the known-good value. Only runs against an already-initialized instance
+# (the secret/encryption files only exist after first real boot), so this
+# is a clean no-op on a fresh install or the CI smoke test.
+if [[ -f /rails/storage/.secret_key_base && -f /rails/storage/.encryption_keys ]]; then
+    export SECRET_KEY_BASE
+    SECRET_KEY_BASE="$(cat /rails/storage/.secret_key_base)"
+    # shellcheck disable=SC1091
+    source /rails/storage/.encryption_keys
+    DIAG_OUTPUT="$(bin/rails runner '
+      current = SettingsService.get(:audiobookshelf_url)
+      expected = "http://a0d7b954-audiobookshelf:13378"
+      puts "DIAG raw audiobookshelf_url=#{current.inspect}"
+      if current != expected
+        SettingsService.set(:audiobookshelf_url, expected)
+        puts "DIAG corrected audiobookshelf_url to #{expected.inspect}"
+      else
+        puts "DIAG audiobookshelf_url already correct, no change made"
+      end
+    ' 2>&1)" || true
+    while IFS= read -r line; do log "DIAG: $line"; done <<< "$DIAG_OUTPUT"
+fi
+
 exec /rails/bin/docker-entrypoint ./bin/thrust ./bin/rails server
