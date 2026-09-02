@@ -23,6 +23,8 @@ on:
       - "obsidian_syncserver_ssl@*"
       - "obsidian_syncserver_npm-*"
       - "obsidian_syncserver_npm@*"
+      - "shelfarr-*"
+      - "shelfarr@*"
   workflow_dispatch:
     inputs:
       addon:
@@ -40,6 +42,7 @@ on:
           - obsidian_syncserver_solo
           - obsidian_syncserver_ssl
           - obsidian_syncserver_npm
+          - shelfarr
 
 jobs:
   build:
@@ -63,6 +66,7 @@ jobs:
           - obsidian_syncserver_solo
           - obsidian_syncserver_ssl
           - obsidian_syncserver_npm
+          - shelfarr
         arch:
           - amd64
           - aarch64
@@ -202,6 +206,21 @@ jobs:
           image-tags: ${{ steps.meta.outputs.version }}
           version: ${{ steps.meta.outputs.version }}
           build-args: BUILD_FROM=couchdb:3.5.2
+          cache-gha: "false"
+          cosign: "false"
+          push: "true"
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push shelfarr
+        if: matrix.addon == 'shelfarr' && (startsWith(github.ref_name, 'shelfarr') || github.event_name == 'workflow_dispatch' && (inputs.addon == 'all' || inputs.addon == 'shelfarr'))
+        uses: home-assistant/builder/actions/build-image@2026.03.2
+        with:
+          arch: ${{ matrix.arch }}
+          context: shelfarr
+          image: ${{ steps.meta.outputs.image }}
+          image-tags: ${{ steps.meta.outputs.version }}
+          version: ${{ steps.meta.outputs.version }}
+          build-args: BUILD_FROM=ghcr.io/pedro-revez-silva/shelfarr:latest
           cache-gha: "false"
           cosign: "false"
           push: "true"

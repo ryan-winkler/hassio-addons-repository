@@ -1,0 +1,42 @@
+name: "Shelfarr"
+slug: shelfarr
+description: "Self-hosted ebook and audiobook library manager (Shelfarr), using the upstream image with configurable audiobooks/ebooks/downloads paths."
+version: "2026.08.31.1"
+url: "https://github.com/ryan-winkler/hassio-addons-repository/tree/main/shelfarr"
+arch:
+  - amd64
+  - aarch64
+init: false
+ports:
+  80/tcp: 5056
+ports_description:
+  80/tcp: "Shelfarr Web UI"
+webui: "http://[HOST]:[PORT:80]"
+map:
+  - media:rw
+  - share:rw
+options:
+  puid: 1000
+  pgid: 1000
+  chown_on_start: "auto"
+  audiobooks_path: "/media/shelfarr/audiobooks"
+  ebooks_path: "/media/shelfarr/ebooks"
+  downloads_path: "/share/shelfarr/downloads"
+  rails_master_key: ""
+  rails_max_threads: 3
+  job_concurrency: 1
+  auth_disabled: false
+  trust_nfs_uid_squash: false
+schema:
+  puid: int
+  pgid: int
+  chown_on_start: list(auto|always|never)
+  audiobooks_path: str
+  ebooks_path: str
+  downloads_path: str
+  rails_master_key: str?
+  rails_max_threads: int
+  job_concurrency: int
+  auth_disabled: bool
+  trust_nfs_uid_squash: bool
+image: "ghcr.io/ryan-winkler/shelfarr-{arch}"

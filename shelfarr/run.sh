@@ -1,0 +1,97 @@
+#!/bin/bash
+set -Eeuo pipefail
+
+OPTIONS_JSON="/data/options.json"
+DEFAULT_AUDIOBOOKS_PATH="/media/shelfarr/audiobooks"
+DEFAULT_EBOOKS_PATH="/media/shelfarr/ebooks"
+DEFAULT_DOWNLOADS_PATH="/share/shelfarr/downloads"
+
+log() {
+    echo "[shelfarr-addon] $*"
+}
+
+die() {
+    echo "[shelfarr-addon] ERROR: $*" >&2
+    exit 1
+}
+
+read_opt() {
+    local key="$1"
+    jq -er --arg k "$key" '.[$k]' "$OPTIONS_JSON" 2> /dev/null || true
+}
+
+require_mapped_path() {
+    local label="$1"
+    local raw="$2"
+    local resolved
+    resolved="$(realpath -m "$raw")"
+    case "$resolved" in
+        /share | /share/* | /media | /media/*) ;;
+        *) die "${label} '${raw}' resolves to '${resolved}', which is outside /share and /media" ;;
+    esac
+    printf '%s\n' "$resolved"
+}
+
+[[ -f "$OPTIONS_JSON" ]] || die "Missing options file at ${OPTIONS_JSON}"
+
+PUID="$(read_opt puid)"; PUID="${PUID:-1000}"
+PGID="$(read_opt pgid)"; PGID="${PGID:-1000}"
+CHOWN_ON_START="$(read_opt chown_on_start)"; CHOWN_ON_START="${CHOWN_ON_START:-auto}"
+RAILS_MASTER_KEY_OPT="$(read_opt rails_master_key)"
+RAILS_MAX_THREADS="$(read_opt rails_max_threads)"; RAILS_MAX_THREADS="${RAILS_MAX_THREADS:-3}"
+JOB_CONCURRENCY="$(read_opt job_concurrency)"; JOB_CONCURRENCY="${JOB_CONCURRENCY:-1}"
+AUTH_DISABLED="$(read_opt auth_disabled)"; AUTH_DISABLED="${AUTH_DISABLED:-false}"
+TRUST_NFS_UID_SQUASH_OPT="$(read_opt trust_nfs_uid_squash)"; TRUST_NFS_UID_SQUASH_OPT="${TRUST_NFS_UID_SQUASH_OPT:-false}"
+
+AUDIOBOOKS_PATH_RAW="$(read_opt audiobooks_path)"; AUDIOBOOKS_PATH_RAW="${AUDIOBOOKS_PATH_RAW:-$DEFAULT_AUDIOBOOKS_PATH}"
+EBOOKS_PATH_RAW="$(read_opt ebooks_path)"; EBOOKS_PATH_RAW="${EBOOKS_PATH_RAW:-$DEFAULT_EBOOKS_PATH}"
+DOWNLOADS_PATH_RAW="$(read_opt downloads_path)"; DOWNLOADS_PATH_RAW="${DOWNLOADS_PATH_RAW:-$DEFAULT_DOWNLOADS_PATH}"
+
+AUDIOBOOKS_PATH="$(require_mapped_path "audiobooks_path" "$AUDIOBOOKS_PATH_RAW")"
+EBOOKS_PATH="$(require_mapped_path "ebooks_path" "$EBOOKS_PATH_RAW")"
+DOWNLOADS_PATH="$(require_mapped_path "downloads_path" "$DOWNLOADS_PATH_RAW")"
+
+mkdir -p "$AUDIOBOOKS_PATH" "$EBOOKS_PATH" "$DOWNLOADS_PATH"
+
+# Shelfarr expects its library/download folders at fixed container paths;
+# point those at whatever HA-mapped folders the user configured.
+for pair in "/audiobooks:${AUDIOBOOKS_PATH}" "/ebooks:${EBOOKS_PATH}" "/downloads:${DOWNLOADS_PATH}"; do
+    dst="${pair%%:*}"
+    src="${pair##*:}"
+    [[ -L "$dst" ]] && rm -f "$dst"
+    [[ -d "$dst" && ! -L "$dst" ]] && rmdir "$dst" 2> /dev/null || true
+    ln -sfn "$src" "$dst"
+done
+
+# /data is the add-on's always-persistent storage; move Shelfarr's sqlite
+# databases, Active Storage files, and auto-generated secrets there so they
+# survive add-on updates without needing a separate config mapping.
+if [[ ! -L /rails/storage ]]; then
+    mkdir -p /data
+    if [[ -d /rails/storage ]]; then
+        cp -an /rails/storage/. /data/ 2> /dev/null || true
+        rm -rf /rails/storage
+    fi
+    ln -sfn /data /rails/storage
+fi
+
+export PUID PGID CHOWN_ON_START
+export SOLID_QUEUE_IN_PUMA=1
+export RAILS_MAX_THREADS
+export JOB_CONCURRENCY
+export DISABLE_AUTH="$AUTH_DISABLED"
+export TRUST_NFS_UID_SQUASH="$TRUST_NFS_UID_SQUASH_OPT"
+if [[ -n "$RAILS_MASTER_KEY_OPT" && "$RAILS_MASTER_KEY_OPT" != "null" ]]; then
+    export RAILS_MASTER_KEY="$RAILS_MASTER_KEY_OPT"
+fi
+
+log "Configuration summary:"
+log "  puid:pgid=${PUID}:${PGID} chown_on_start=${CHOWN_ON_START}"
+log "  audiobooks_path=${AUDIOBOOKS_PATH}"
+log "  ebooks_path=${EBOOKS_PATH}"
+log "  downloads_path=${DOWNLOADS_PATH}"
+log "  rails_max_threads=${RAILS_MAX_THREADS} job_concurrency=${JOB_CONCURRENCY}"
+log "  auth_disabled=${AUTH_DISABLED} trust_nfs_uid_squash=${TRUST_NFS_UID_SQUASH_OPT}"
+
+cd /rails
+exec /rails/bin/docker-entrypoint ./bin/thrust ./bin/rails server

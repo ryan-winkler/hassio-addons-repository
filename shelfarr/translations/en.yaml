@@ -1,0 +1,34 @@
+configuration:
+  puid:
+    name: PUID
+    description: User ID for file ownership on writable mapped volumes.
+  pgid:
+    name: PGID
+    description: Group ID for file ownership on writable mapped volumes.
+  chown_on_start:
+    name: Chown on start
+    description: Whether to adjust ownership of storage/library paths at startup (auto/always/never). Set to "never" on read-only or permission-locked filesystems.
+  audiobooks_path:
+    name: Audiobooks path
+    description: Folder Shelfarr places completed audiobooks into. Must be under /share or /media.
+  ebooks_path:
+    name: Ebooks path
+    description: Folder Shelfarr places completed ebooks into. Must be under /share or /media.
+  downloads_path:
+    name: Downloads path
+    description: Folder Shelfarr watches for completed downloads to post-process. Must be under /share or /media.
+  rails_master_key:
+    name: Rails master key
+    description: Leave blank to auto-generate and persist a secret key in the add-on's own storage.
+  rails_max_threads:
+    name: Max threads
+    description: Puma thread count per process and the SQLite connection pool size (RAILS_MAX_THREADS).
+  job_concurrency:
+    name: Job concurrency
+    description: Number of Solid Queue background worker processes (downloads, imports, scans).
+  auth_disabled:
+    name: Disable authentication
+    description: Skip password login (username-only). Only enable on trusted networks.
+  trust_nfs_uid_squash:
+    name: Trust NFS UID squash
+    description: Enable if audiobooks/ebooks/downloads paths are on an NFS mount that squashes UIDs, to avoid unnecessary ownership errors.
