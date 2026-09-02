@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026.08.31.1_4
+
+- **Fixed: add-on wouldn't start** ("Invalid configuration — expected int"). `rails_max_threads: ""` as the options default was invalid against its `int?` schema type (empty string isn't a valid int, unlike the `str?` fields). Removed the default entirely — the option is still available, just not pre-populated, matching every other optional non-string field's convention.
+
 ## 2026.08.31.1_3
 
 - **Fixed a production crash**, found via live testing on a real HA instance: the default `rails_max_threads: 3` forced BOTH the Puma thread pool and the SQLite connection pool down to 3 (they share one env var), but Solid Queue — which always runs embedded in Puma here (`SOLID_QUEUE_IN_PUMA=1`) — needs a pool of at least 5. The pool doesn't exhaust at boot; ours ran for ~32 minutes before Solid Queue killed Puma, leaving Thruster (the add-on's own internal proxy) 502ing every request until manually restarted — and the CI smoke test's ~15s boot check never runs long enough to catch this class of bug.
