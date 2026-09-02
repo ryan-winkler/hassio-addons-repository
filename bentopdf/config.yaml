@@ -24,4 +24,4 @@ options:
 schema:
   log_level: list(info|debug|warn|error)
   simple_mode: bool
-image: "ghcr.io/toledoem/bentopdf-{arch}"
+image: "ghcr.io/ryan-winkler/bentopdf-{arch}"
