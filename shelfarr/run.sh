@@ -60,6 +60,33 @@ DOWNLOADS_PATH="$(require_mapped_path "downloads_path" "$DOWNLOADS_PATH_RAW")"
 
 mkdir -p "$AUDIOBOOKS_PATH" "$EBOOKS_PATH" "$DOWNLOADS_PATH"
 
+# mkdir above runs as root, so a freshly created path is root-owned; the app
+# runs as PUID:PGID after docker-entrypoint drops privileges and needs write
+# access (Shelfarr's own health check does a plain File.writable? on these).
+# Mirror docker-entrypoint's own chown_on_start policy for /rails/storage
+# rather than always chowning, so "never" still works on pre-permissioned or
+# root-squashed NFS exports.
+ensure_output_path_writable() {
+    local path="$1"
+    [[ "$CHOWN_ON_START" == "never" ]] && return 0
+    if [[ "$CHOWN_ON_START" == "auto" ]]; then
+        local owner
+        owner="$(stat -c '%u:%g' "$path" 2> /dev/null)" || owner=""
+        [[ "$owner" == "${PUID}:${PGID}" ]] && return 0
+    fi
+    if ! chown -R "${PUID}:${PGID}" "$path" 2> /tmp/shelfarr-addon-chown-error.$$; then
+        if [[ "$CHOWN_ON_START" == "always" ]]; then
+            die "Failed to chown ${path} to ${PUID}:${PGID} and chown_on_start=always is set: $(cat /tmp/shelfarr-addon-chown-error.$$ 2> /dev/null)"
+        fi
+        log "Warning: unable to chown ${path} to ${PUID}:${PGID}; continuing. Set chown_on_start=never to silence this, or fix host permissions."
+    fi
+    rm -f /tmp/shelfarr-addon-chown-error.$$
+}
+
+ensure_output_path_writable "$AUDIOBOOKS_PATH"
+ensure_output_path_writable "$EBOOKS_PATH"
+ensure_output_path_writable "$DOWNLOADS_PATH"
+
 # Shelfarr expects its library/download folders at fixed container paths;
 # point those at whatever HA-mapped folders the user configured.
 for pair in "/audiobooks:${AUDIOBOOKS_PATH}" "/ebooks:${EBOOKS_PATH}" "/downloads:${DOWNLOADS_PATH}"; do
