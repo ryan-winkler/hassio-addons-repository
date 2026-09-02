@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026.08.31.1_2
+
+- Added a CI smoke test (PR check): builds the image, boots it with a stub `/data/options.json`, and confirms `/up` returns 200 and the storage/library symlinks resolve correctly before any change can merge.
+- Documented reverse proxy / custom domain behavior, verified against Shelfarr's actual Rails config: no Host header blocking, no forced-HTTPS redirect loop, and that ActionCable (`/cable`) needs WebSocket forwarding for live page updates (degrades gracefully to manual-refresh if not forwarded).
+
 ## 2026.08.31.1_1
 
 - Surfaced the remaining documented Shelfarr environment variables as options: `rails_relative_url_root` (sub-path reverse proxy support), `allow_nonatomic_nfs_directory_publication`, and `tz`.

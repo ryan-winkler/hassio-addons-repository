@@ -124,6 +124,7 @@ jobs:
           context: ${{ matrix.addon }}
           file: ${{ matrix.addon }}/Dockerfile
           push: false
+          load: ${{ matrix.addon == 'shelfarr' }}
           provenance: false
           sbom: false
           tags: local/${{ matrix.addon }}-${{ matrix.arch }}:test
@@ -131,6 +132,49 @@ jobs:
             BUILD_FROM=${{ steps.information.outputs.build_from }}
           cache-from: type=local,src=/tmp/buildx-cache/${{ matrix.arch }}
           cache-to: type=local,dest=/tmp/buildx-cache-new/${{ matrix.arch }}
+
+      - name: Smoke test shelfarr
+        if: matrix.addon == 'shelfarr'
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/smoke/data /tmp/smoke/media /tmp/smoke/share
+          echo '{}' > /tmp/smoke/data/options.json
+
+          docker run -d --name shelfarr-smoke \
+            -v /tmp/smoke/data:/data \
+            -v /tmp/smoke/media:/media \
+            -v /tmp/smoke/share:/share \
+            -p 18080:80 \
+            "local/shelfarr-${{ matrix.arch }}:test"
+
+          healthy=""
+          for _ in $(seq 1 40); do
+            if curl -fsS "http://localhost:18080/up" > /dev/null 2>&1; then
+              healthy="1"
+              break
+            fi
+            sleep 3
+          done
+
+          echo "--- container logs ---"
+          docker logs shelfarr-smoke || true
+
+          if [[ -z "$healthy" ]]; then
+            echo "::error::shelfarr did not become healthy (/up never returned 200)"
+            docker rm -f shelfarr-smoke || true
+            exit 1
+          fi
+
+          echo "--- /up response ---"
+          curl -fsS -i "http://localhost:18080/up"
+
+          echo "--- storage symlink check ---"
+          docker exec shelfarr-smoke readlink -f /rails/storage
+          docker exec shelfarr-smoke readlink -f /audiobooks
+          docker exec shelfarr-smoke readlink -f /ebooks
+          docker exec shelfarr-smoke readlink -f /downloads
+
+          docker rm -f shelfarr-smoke
 
       - name: Update cache
         run: |

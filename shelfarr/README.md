@@ -22,6 +22,15 @@ The add-on registers a HA sidebar panel via Ingress, so Shelfarr shows up alongs
 
 True HA-account SSO (validating logins against Supervisor's `/auth`, i.e. `auth_api`) is not implemented — it needs a source-level patch to Shelfarr's login flow, not just add-on config. See the add-on's PR/commit history for the tradeoff writeup if that's ever worth doing.
 
+## Running behind your own reverse proxy / custom domain
+
+Unlike Ingress (above), putting your own reverse proxy (Nginx Proxy Manager, Traefik, Caddy, Cloudflare Tunnel, ...) in front of port `5056` with a real domain — e.g. `https://shelfarr.example.com` or `shelfarr.internal` — works cleanly. Verified against Shelfarr's Rails config directly:
+
+- **No Host header blocking.** Rails' `config.hosts` allowlist is unset, so requests for any domain name reach the app — no "Blocked Host" 403s to work around.
+- **No forced-HTTPS redirect loop.** `config.force_ssl`/`config.assume_ssl` are both off by default, so a proxy that terminates TLS and forwards plain HTTP internally won't cause a redirect loop. Shelfarr generates correct `https://` links as long as your proxy sends the standard `X-Forwarded-Proto` header — Nginx Proxy Manager, Traefik, and Caddy all do this out of the box.
+- **WebSockets need to be forwarded.** Shelfarr mounts ActionCable at `/cable` and uses it for live page updates (download/request progress, library sync status refresh automatically instead of needing a manual reload). If your proxy doesn't forward the `Upgrade`/`Connection` headers on that path, Shelfarr still works fully — those pages just stop auto-refreshing and need a manual reload. Nginx Proxy Manager: enable **Websockets Support** in the proxy host's Advanced tab. Traefik/Caddy forward WebSocket upgrades by default; no extra config needed.
+- **Sub-path only:** if you're proxying at a sub-path instead of a subdomain (e.g. `https://home.example.com/shelfarr/` rather than `https://shelfarr.example.com/`), set the `rails_relative_url_root` option to that path (e.g. `/shelfarr`). Leave it blank for a dedicated subdomain or direct access — that's the default and needs no change.
+
 ## Not included
 
 The optional **Libation companion** (Audible backup, beta) from upstream's `docker-compose.yml` is not part of this add-on — it's a second .NET container with its own control/token volumes. Shelfarr runs fine without it; the Audible backup feature in Settings will simply stay disconnected.
