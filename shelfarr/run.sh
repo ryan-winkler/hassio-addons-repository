@@ -17,7 +17,11 @@ die() {
 
 read_opt() {
     local key="$1"
-    jq -er --arg k "$key" '.[$k]' "$OPTIONS_JSON" 2> /dev/null || true
+    local val
+    # `// empty` would also swallow a real `false` (jq treats it as falsy);
+    # compare to null explicitly so booleans round-trip correctly.
+    val="$(jq -r --arg k "$key" 'if .[$k] == null then "" else (.[$k] | tostring) end' "$OPTIONS_JSON" 2> /dev/null)" || true
+    printf '%s' "$val"
 }
 
 require_mapped_path() {
@@ -85,13 +89,13 @@ export JOB_CONCURRENCY
 export DISABLE_AUTH="$AUTH_DISABLED"
 export TRUST_NFS_UID_SQUASH="$TRUST_NFS_UID_SQUASH_OPT"
 export SHELFARR_SETTING_ALLOW_NONATOMIC_NFS_DIRECTORY_PUBLICATION="$ALLOW_NONATOMIC_NFS_OPT"
-if [[ -n "$RAILS_MASTER_KEY_OPT" && "$RAILS_MASTER_KEY_OPT" != "null" ]]; then
+if [[ -n "$RAILS_MASTER_KEY_OPT" ]]; then
     export RAILS_MASTER_KEY="$RAILS_MASTER_KEY_OPT"
 fi
-if [[ -n "$RAILS_RELATIVE_URL_ROOT_OPT" && "$RAILS_RELATIVE_URL_ROOT_OPT" != "null" ]]; then
+if [[ -n "$RAILS_RELATIVE_URL_ROOT_OPT" ]]; then
     export RAILS_RELATIVE_URL_ROOT="$RAILS_RELATIVE_URL_ROOT_OPT"
 fi
-if [[ -n "$TZ_OPT" && "$TZ_OPT" != "null" ]]; then
+if [[ -n "$TZ_OPT" ]]; then
     export TZ="$TZ_OPT"
 fi
 

@@ -15,4 +15,7 @@ LABEL \
   io.hass.type="addon" \
   io.hass.arch="aarch64|amd64"
 
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+  CMD curl -f http://localhost:80/up || exit 1
+
 ENTRYPOINT ["/run.sh"]
