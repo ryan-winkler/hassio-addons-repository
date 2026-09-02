@@ -1,7 +1,7 @@
 name: "Shelfarr"
 slug: shelfarr
 description: "Self-hosted ebook and audiobook library manager (Shelfarr), using the upstream image with configurable audiobooks/ebooks/downloads paths."
-version: "2026.08.31.1_3"
+version: "2026.08.31.1_4"
 url: "https://github.com/ryan-winkler/hassio-addons-repository/tree/main/shelfarr"
 arch:
   - amd64
@@ -29,7 +29,6 @@ options:
   downloads_path: "/share/shelfarr/downloads"
   rails_master_key: ""
   rails_relative_url_root: ""
-  rails_max_threads: ""
   job_concurrency: 1
   auth_disabled: false
   trust_nfs_uid_squash: false
